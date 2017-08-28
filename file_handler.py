@@ -17,6 +17,8 @@ def set_to_file(data, filename):
 
 
 def initialize(project_name, base_url):
+    project_name = project_name
+
     queue_file = project_name+"/queue.txt"
     crawled_file = project_name + "/crawled.txt"
 
@@ -38,7 +40,6 @@ def file_to_set(filename):
         with open(filename, 'r') as file_ptr:
             for line in file_ptr:
                 new_set.add(line.replace('\n', ''))
-        #new_file(filename)
     except Exception as e:
         print(str(e))
 

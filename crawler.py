@@ -2,7 +2,9 @@ from urllib.request import urlopen
 from domain_finder import *
 from file_handler import *
 from link_complier import LinkFinder
+
 import sys
+import threading
 
 
 def request_get_links(url):
@@ -32,34 +34,19 @@ def file_update(queue, crawled):
     set_to_file(crawled['crawled_set'], crawled['crawled_file'])
 
 
-def help():
-    print('Usage:\n\
-          crawler.py <project name> <homepage url>\n')
-    print('Options:\n\
-          -h or --help')
+def crawl():
+    global queue_set, queue_file
+    global crawled_set, crawled_file
 
-
-if __name__ == '__main__':
-
-    if len(sys.argv) < 3 or len(sys.argv) > 4 or '-h' in sys.argv or '--help' in sys.argv:
-        help()
-        sys.exit(0)
-
-    project_name = sys.argv[1]
-    base_url = sys.argv[2]
-    queue_file = project_name + '/queue.txt'
-    crawled_file = project_name + '/crawled.txt'
-    result_file = project_name+'/result.txt'
-    domain_name = get_domain_name(base_url)
-    initialize(project_name, base_url)
-    queue_set = file_to_set(queue_file)
-    crawled_set = file_to_set(crawled_file)
-
+    thread_lock.acquire()
     while len(queue_set) > 0:
         url = queue_set.pop()
-        print('Processing url: '+ url)
+        thread_lock.release()
+
+        print('{0} processing url: {1}'.format(threading.current_thread().getName(), url))
         print(str(len(queue_set))+' left in queue.')
 
+        thread_lock.acquire()
         add_to_queue(request_get_links(url))
         crawled_set.add(url)
 
@@ -69,4 +56,60 @@ if __name__ == '__main__':
         queue_set = file_to_set(queue_file)
         crawled_set = file_to_set(crawled_file)
 
-    rename_file(crawled_file, result_file)
+    thread_lock.release()
+
+    print('Message from {0}.'.format(threading.current_thread().getName()))
+    print('Thread {0} Terminated.'.format(threading.current_thread().getName()))
+    print('{0} active Threads left.'.format(threading.active_count()))
+
+
+def help():
+    print('Usage:\n\
+          crawler.py <project name> <homepage url> [options]\n')
+    print('Options:\n\
+          -h or --help:\tDisplays help page\n\
+          -t <number_of_threads>:\tEnables threading, creating <number_of_threads> threads.')
+
+
+if __name__ == '__main__':
+
+    if len(sys.argv) < 3 or len(sys.argv) > 6 or '-h' in sys.argv or '--help' in sys.argv:
+        help()
+        sys.exit(0)
+
+    project_name = 'projects/'+sys.argv[1]
+    base_url = sys.argv[2]
+    queue_file = project_name + '/queue.txt'
+    crawled_file = project_name + '/crawled.txt'
+    domain_name = get_domain_name(base_url)
+    initialize(project_name, base_url)
+    queue_set = file_to_set(queue_file)
+    crawled_set = file_to_set(crawled_file)
+    thread_lock = threading.RLock()
+
+    if '-t' in sys.argv:
+        counter = 0
+        threads = []
+
+        number_of_threads = int(float(sys.argv[sys.argv.index('-t')+1]))
+
+        while counter < number_of_threads:
+            threads.append(threading.Thread(target=crawl))
+            counter += 1
+
+        print('{0} threads created.'.format(len(threads)))
+
+        counter = 1
+
+        while counter < number_of_threads:
+            try:
+                threads[counter].start()
+                counter += 1
+            except Exception as e:
+                print(e)
+
+        crawl()
+
+        print('{0} threads started.'.format(len(threads)))
+    else:
+        crawl()
