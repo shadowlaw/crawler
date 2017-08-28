@@ -24,9 +24,8 @@ def request_get_links(url):
 
 def add_to_queue(link_set):
     for item in link_set:
-        if item in queue_set or item in crawled_set:
-            continue
-        queue_set.add(item)
+        if item not in queue_set and item not in crawled_set:
+            queue_set.add(item)
 
 
 def file_update(queue, crawled):
@@ -40,21 +39,25 @@ def crawl():
 
     thread_lock.acquire()
     while len(queue_set) > 0:
+
         url = queue_set.pop()
+
         thread_lock.release()
 
         print('{0} processing url: {1}'.format(threading.current_thread().getName(), url))
         print(str(len(queue_set))+' left in queue.')
 
         thread_lock.acquire()
-        add_to_queue(request_get_links(url))
         crawled_set.add(url)
 
+        add_to_queue(request_get_links(url))
+
         file_update({'queue_set':queue_set, 'queue_file':queue_file}, {"crawled_set":crawled_set, 'crawled_file': crawled_file})
-        print('{0} crawled. {1} crawled'.format(url, len(crawled_set)))
+        print('From {0}: {1} crawled. {2} crawled'.format(threading.current_thread().getName(), url, len(crawled_set)))
 
         queue_set = file_to_set(queue_file)
         crawled_set = file_to_set(crawled_file)
+        del url
 
     thread_lock.release()
 
@@ -94,19 +97,14 @@ if __name__ == '__main__':
         number_of_threads = int(float(sys.argv[sys.argv.index('-t')+1]))
 
         while counter < number_of_threads:
-            threads.append(threading.Thread(target=crawl))
-            counter += 1
-
-        print('{0} threads created.'.format(len(threads)))
-
-        counter = 1
-
-        while counter < number_of_threads:
             try:
+                threads.append(threading.Thread(target=crawl))
                 threads[counter].start()
                 counter += 1
             except Exception as e:
                 print(e)
+
+        print('{0} threads created and started.'.format(len(threads)))
 
         crawl()
 
