@@ -7,6 +7,7 @@ import sys
 import threading
 
 
+
 def request_get_links(url):
     html_string = ''
     try:
@@ -51,7 +52,7 @@ def crawl():
         add_to_queue(request_get_links(url))
 
         file_update({'queue_set':queue_set, 'queue_file':queue_file}, {"crawled_set":crawled_set, 'crawled_file': crawled_file})
-        print('{0} crawled. {1} crawled'.format(url, len(crawled_set)))
+        print('From {0}: {1} crawled. {2} crawled'.format(threading.current_thread().getName(), url, len(crawled_set)))
 
         queue_set = file_to_set(queue_file)
         crawled_set = file_to_set(crawled_file)
@@ -94,22 +95,15 @@ if __name__ == '__main__':
         number_of_threads = int(float(sys.argv[sys.argv.index('-t')+1]))
 
         while counter < number_of_threads:
-            threads.append(threading.Thread(target=crawl))
-            counter += 1
-
-        print('{0} threads created.'.format(len(threads)))
-
-        counter = 1
-
-        while counter < number_of_threads:
             try:
+                threads.append(threading.Thread(target=crawl))
                 threads[counter].start()
                 counter += 1
             except Exception as e:
                 print(e)
 
-        crawl()
+        print('{0} threads created and started.'.format(len(threads)))
 
-        print('{0} threads started.'.format(len(threads)))
+        crawl()
     else:
         crawl()
