@@ -7,10 +7,11 @@
 
 ================================================= Instructions =================================================
 Usage:
-          crawler.py <project name> <homepage url>
+          crawler.py <project name> <homepage url> [options]
 
 Options:
-          -h or --help
+          -h or --help:	Displays help page
+          -t <number_of_threads>:	Enables threading, creating <number_of_threads> threads.
 
 ================================================= Compatibility =================================================
 python 3.x
