@@ -14,7 +14,7 @@ def request_get_links(url):
         if 'text/html' in response.getheader('Content-Type'):
             html_bytes = response.read()
             html_string = html_bytes.decode("utf-8")
-        finder = LinkFinder(base_url, url)
+        finder = LinkFinder(base_url, domain_name)
         finder.feed(html_string)
     except Exception as e:
         print(str(e))
@@ -24,7 +24,7 @@ def request_get_links(url):
 
 def add_to_queue(link_set):
     for item in link_set:
-        if item in queue_set or item in crawled_set or domain_name not in item:
+        if item in queue_set or item in crawled_set:
             continue
         queue_set.add(item)
 
