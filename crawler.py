@@ -8,7 +8,6 @@ import sys
 import threading
 
 
-
 def request_get_links(url):
     html_string = ''
     try:
@@ -58,13 +57,8 @@ def crawl(url):
     crawled_set.add(url)
     add_to_queue(request_get_links(url))
 
-<<<<<<< HEAD
-        file_update({'queue_set':queue_set, 'queue_file':queue_file}, {"crawled_set":crawled_set, 'crawled_file': crawled_file})
-        print('From {0}: {1} crawled. {2} crawled'.format(threading.current_thread().getName(), url, len(crawled_set)))
-=======
     file_update({'queue_set':queue_set, 'queue_file':queue_file}, {"crawled_set":crawled_set, 'crawled_file': crawled_file})
-    print('{0} crawled. {1} crawled'.format(url, len(crawled_set)))
->>>>>>> threaded
+    print('From {0}: {1} crawled. {2} crawled'.format(threading.current_thread().getName(), url, len(crawled_set)))
 
 
 def thread_task():
@@ -110,9 +104,9 @@ if __name__ == '__main__':
         number_of_threads = int(float(sys.argv[sys.argv.index('-t')+1]))
 
         while counter < number_of_threads:
-<<<<<<< HEAD
             try:
-                threads.append(threading.Thread(target=crawl))
+                threads.append(threading.Thread(target=thread_task))
+                threads[counter].daemon = True
                 threads[counter].start()
                 counter += 1
             except Exception as e:
@@ -120,17 +114,8 @@ if __name__ == '__main__':
 
         print('{0} threads created and started.'.format(len(threads)))
 
-        crawl()
-=======
-            threads.append(threading.Thread(target=thread_task))
-            threads[counter].daemon = True
-            threads[counter].start()
-            counter += 1
-
-        print('{0} threads created and started.'.format(len(threads)))
-
         create_jobs()
->>>>>>> threaded
+
     else:
         while len(queue_set) > 0:
             url = queue_set.pop()
