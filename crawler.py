@@ -2,6 +2,7 @@ from urllib.request import urlopen
 from domain_finder import *
 from file_handler import *
 from link_complier import LinkFinder
+from queue import Queue
 
 import sys
 import threading
@@ -34,33 +35,40 @@ def file_update(queue, crawled):
     set_to_file(crawled['crawled_set'], crawled['crawled_file'])
 
 
-def crawl():
+def create_jobs():
+    global queue_set
+
+    queue_set = file_to_set(queue_file)
+
+    if len(queue_set) > 0:
+        print(str(len(queue_set)) + ' left in queue.')
+        for link in file_to_set(queue_file):
+            queued.put(link)
+        queued.join()
+        create_jobs()
+
+
+def crawl(url):
     global queue_set, queue_file
     global crawled_set, crawled_file
 
-    thread_lock.acquire()
-    while len(queue_set) > 0:
-        url = queue_set.pop()
-        thread_lock.release()
+    print('{0} processing url: {1}'.format(threading.current_thread().getName(), url))
 
-        print('{0} processing url: {1}'.format(threading.current_thread().getName(), url))
-        print(str(len(queue_set))+' left in queue.')
+    crawled_set.add(url)
+    add_to_queue(request_get_links(url))
 
-        thread_lock.acquire()
-        crawled_set.add(url)
-        add_to_queue(request_get_links(url))
+    file_update({'queue_set':queue_set, 'queue_file':queue_file}, {"crawled_set":crawled_set, 'crawled_file': crawled_file})
+    print('{0} crawled. {1} crawled'.format(url, len(crawled_set)))
 
-        file_update({'queue_set':queue_set, 'queue_file':queue_file}, {"crawled_set":crawled_set, 'crawled_file': crawled_file})
-        print('{0} crawled. {1} crawled'.format(url, len(crawled_set)))
 
-        queue_set = file_to_set(queue_file)
-        crawled_set = file_to_set(crawled_file)
+def thread_task():
+    global url
 
-    thread_lock.release()
-
-    print('Message from {0}.'.format(threading.current_thread().getName()))
-    print('Thread {0} Terminated.'.format(threading.current_thread().getName()))
-    print('{0} active Threads left.'.format(threading.active_count()))
+    while True:
+        url = queued.get()
+        queue_set.remove(url)
+        crawl(url)
+        queued.task_done()
 
 
 def help():
@@ -85,7 +93,9 @@ if __name__ == '__main__':
     initialize(project_name, base_url)
     queue_set = file_to_set(queue_file)
     crawled_set = file_to_set(crawled_file)
-    thread_lock = threading.RLock()
+    queued = Queue()
+
+    url = ''
 
     if '-t' in sys.argv:
         counter = 0
@@ -94,22 +104,18 @@ if __name__ == '__main__':
         number_of_threads = int(float(sys.argv[sys.argv.index('-t')+1]))
 
         while counter < number_of_threads:
-            threads.append(threading.Thread(target=crawl))
+            threads.append(threading.Thread(target=thread_task))
+            threads[counter].daemon = True
+            threads[counter].start()
             counter += 1
 
-        print('{0} threads created.'.format(len(threads)))
+        print('{0} threads created and started.'.format(len(threads)))
 
-        counter = 1
-
-        while counter < number_of_threads:
-            try:
-                threads[counter].start()
-                counter += 1
-            except Exception as e:
-                print(e)
-
-        crawl()
-
-        print('{0} threads started.'.format(len(threads)))
+        create_jobs()
     else:
-        crawl()
+        while len(queue_set) > 0:
+            url = queue_set.pop()
+            print('{0} left in queue.'.format(len(queue_set)))
+            crawl(url)
+            queue_set = file_to_set(queue_file)
+            crawled_set = file_to_set(crawled_file)
