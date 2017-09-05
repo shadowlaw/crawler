@@ -78,12 +78,13 @@ def help():
           -h or --help:\tDisplays help page\n\
           -t <number_of_threads>:\tEnables threading, creating <number_of_threads> threads.')
 
+    sys.exit(0)
+
 
 if __name__ == '__main__':
 
     if len(sys.argv) < 3 or len(sys.argv) > 6 or '-h' in sys.argv or '--help' in sys.argv:
         help()
-        sys.exit(0)
 
     project_name = 'projects/'+sys.argv[1]
     base_url = sys.argv[2]
@@ -101,7 +102,10 @@ if __name__ == '__main__':
         counter = 0
         threads = []
 
-        number_of_threads = int(float(sys.argv[sys.argv.index('-t')+1]))
+        try:
+            number_of_threads = int(float(sys.argv[sys.argv.index('-t') + 1]))
+        except:
+            help()
 
         while counter < number_of_threads:
             try:
