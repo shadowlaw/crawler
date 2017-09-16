@@ -10,16 +10,16 @@ Simple optional multi-threaded python code that gathers all links from a specifi
 
 ## Instructions
 #### Usage:
-          ```crawler.py <project name> <homepage url> [options]
+          crawler.py <project name> <homepage url> [options]
           
           eg. 
           * crawler google https://www.google.com -t 2
-          * crawler google https://www.google.com```
+          * crawler google https://www.google.com
           
 
 #### Options:
-          ```-h or --help:	Displays help page
-          -t <number_of_threads>:	Enables threading, creating <number_of_threads> threads.```
+          -h or --help:	Displays help page
+          -t <number_of_threads>:	Enables threading, creating <number_of_threads> threads.
 
 ## Compatibility
 only tested with python 3.x on unix
